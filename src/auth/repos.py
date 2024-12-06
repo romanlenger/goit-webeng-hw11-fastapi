@@ -25,3 +25,8 @@ class UserRepository:
         query = select(User).where(User.email==email)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+    
+    async def get_user_by_username(self, username):
+        query = select(User).where(User.username==username)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
