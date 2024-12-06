@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "goit-module11"
+version = "0.1.0"
+description = ""
+authors = ["romanlenger <145775490+romanlenger@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {extras = ["standard"], version = "^0.115.6"}
+pydantic = "^2.10.3"
+pydantic-settings = "^2.6.1"
+sqlalchemy = "^2.0.36"
+alembic = "^1.14.0"
+asyncpg = "^0.30.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
