@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     mail_from: str = "admin@admin.com"
     mail_port: int = 1025
     mail_server: str = "localhost"
-
+    redis_url: str = "redis://localhost:6379/0"
+    
     class Config:
         env_file = ".env"
         extra = "allow"

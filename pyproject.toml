@@ -18,6 +18,10 @@ passlib = "^1.7.4"
 bcrypt = "^4.2.1"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 fastapi-mail = "^1.4.2"
+fastapi-cache2 = "^0.2.2"
+aioredis = "^2.0.1"
+redis = "^5.2.1"
+setuptools = "^75.6.0"
 
 
 [build-system]
