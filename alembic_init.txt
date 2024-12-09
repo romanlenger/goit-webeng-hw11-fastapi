@@ -1,0 +1,5 @@
+alembic init -t async alembic
+
+alembic revision --autogenerate -m"models.py creation"
+
+alembic upgrade head

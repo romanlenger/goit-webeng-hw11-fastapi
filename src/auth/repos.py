@@ -14,7 +14,8 @@ class UserRepository:
         new_user = User(
             username=user_create.username,
             hashed_password=hashed_password,
-            email=user_create.email
+            email=user_create.email,
+            is_active=False
         )
         self.session.add(new_user)
         await self.session.commit()
@@ -30,3 +31,9 @@ class UserRepository:
         query = select(User).where(User.username==username)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+    
+    async def activate_user(self, user: User):
+        user.is_active = True
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
