@@ -1,15 +1,18 @@
 from datetime import date, timedelta
 
 from sqlalchemy import select
+from fastapi_cache.decorator import cache
 
 from src.contacts.models import Contact
 from src.contacts.schema import ContactCreate
+from config.cache import key_builder_repo
 
 
 class ContactRepository:
     def __init__(self, session):
         self.session = session
 
+    @cache(expire=60, namespace="get_contact_repo", key_builder=key_builder_repo)
     async def get_contact(self, contact_id: int) -> Contact:
         query = select(Contact).where(Contact.id==contact_id)
         result = await self.session.execute(query)
