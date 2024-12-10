@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from jinja2 import Environment, FileSystemLoader
 
@@ -7,8 +8,8 @@ from config.db import get_db
 from src.auth.schema import UserResponse, UserCreate, Token
 from src.auth.repos import UserRepository
 from src.auth.pass_utils import verify_password
-from src.auth.mail_utils import send_verification_email
-from src.auth.utils import create_acces_token, create_refresh_token, decode_access_token, create_verification_token, decode_verification_token
+from src.auth.mail_utils import send_verification_email, send_reset_password_email
+from src.auth.utils import create_acces_token, create_refresh_token, create_verification_token, decode_verification_token
 
 
 router = APIRouter()
@@ -51,6 +52,65 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
         )
     await user_repo.activate_user(user)
     return {"msg" : "Email verified successfully!"}
+
+
+@router.post("/forgot-password")
+async def forgot_password(email: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    user_repo = UserRepository(db)
+    user = await user_repo.get_user_by_email(email=email)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='User not found',
+        )
+    reset_token = create_verification_token(email)
+    reset_link = f"http://localhost:8000/auth/reset-password-form?token={reset_token}"
+    template = env.get_template("reset_password.html")
+    email_body = template.render(reset_link=reset_link)
+    background_tasks.add_task(send_reset_password_email, user.email, email_body)
+
+    return {"msg": "Password reset email sent"}
+
+
+@router.get("/reset-password-form", response_class=HTMLResponse)
+async def get_reset_password_form(token: str, db: AsyncSession = Depends(get_db)):
+    """
+    Відкриває форму введення нового паролю після перевірки токена.
+    """
+    try:
+        email = decode_verification_token(token)
+        user_repo = UserRepository(db)
+        user = await user_repo.get_user_by_email(email=email)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token"
+        )
+    
+    template = env.get_template("reset_password_form.html")
+    form_html = template.render(token=token)
+    return HTMLResponse(content=form_html)
+
+
+@router.post("/reset-password")
+async def reset_password(token: str = Form(...), new_password: str = Form(...), db: AsyncSession = Depends(get_db)):
+    email = decode_verification_token(token)
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
+    
+    user_repo = UserRepository(db)
+    user = await user_repo.get_user_by_email(email=email)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    await user_repo.update_password(user, new_password=new_password)
+
+    return {"msg": "Password reset successful"}
 
 
 @router.post("/token", response_model=Token)

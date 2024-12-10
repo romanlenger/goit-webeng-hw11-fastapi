@@ -24,3 +24,14 @@ async def send_verification_email(email: str, email_body: str):
     )
     fm = FastMail(mail_conf)
     await fm.send_message(message=message)
+
+
+async def send_reset_password_email(email: str, email_body: str):
+    message = MessageSchema(
+        subject="Reset Password",
+        recipients=[email],
+        body=email_body,
+        subtype="html"
+    )
+    fm = FastMail(mail_conf)
+    await fm.send_message(message=message)

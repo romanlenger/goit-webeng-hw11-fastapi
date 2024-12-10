@@ -37,3 +37,10 @@ class UserRepository:
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
+
+    async def update_password(self, user: User, new_password: str):
+        new_hashed_password = get_password_hash(new_password)
+        user.hashed_password = new_hashed_password
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
