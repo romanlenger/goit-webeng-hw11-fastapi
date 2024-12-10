@@ -22,6 +22,8 @@ fastapi-cache2 = "^0.2.2"
 aioredis = "^2.0.1"
 redis = "^5.2.1"
 setuptools = "^75.6.0"
+cloudinary = "^1.41.0"
+uvicorn = "^0.32.1"
 
 
 [build-system]

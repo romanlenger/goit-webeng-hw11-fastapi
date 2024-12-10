@@ -1,15 +1,22 @@
 from datetime import datetime, timedelta, timezone
-from config.general import settings
-
-from src.auth.schema import TokenData
 
 from jose import jwt, JWTError
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from config.general import settings
+from config.db import get_db
+from src.auth.schema import TokenData, UserResponse
+from src.auth.repos import UserRepository
 
 
 ALGORITHM = "HS256"
 ACCES_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 VERIFICATION_TOKEN_EXPIRE_HOURS = 24
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 def create_verification_token(email: str) -> str:
@@ -57,3 +64,33 @@ def decode_access_token(token: str) -> TokenData | None:
         return TokenData(username=username)
     except: JWTError
     return None
+
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme), 
+    db: AsyncSession = Depends(get_db)
+) -> UserResponse:
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_repo = UserRepository(db)
+    user = await user_repo.get_user_by_email(email=email)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return user

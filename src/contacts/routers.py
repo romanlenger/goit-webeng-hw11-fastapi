@@ -4,13 +4,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.db import get_db
 from src.contacts.repos import ContactRepository
 from src.contacts.schema import ContactResponse, ContactCreate, ContactUpdate
+from src.auth.utils import get_current_user
 
 router = APIRouter()
+MAX_CONTACTS_PER_USER = 100
 
 
 @router.post("/", response_model=ContactResponse)
-async def create_contact(contact: ContactCreate, db: AsyncSession = Depends(get_db)):
+async def create_contact(contact: ContactCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     contact_repo = ContactRepository(db)
+    user_contacts_count = await db.execute(
+        "SELECT COUNT(*) FROM contacts WHERE user_id = :user_id",
+        {"user_id": current_user["id"]}
+    )
+    count = user_contacts_count.scalar()
+    
+    if count >= MAX_CONTACTS_PER_USER:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Contact limit reached. You can only have {MAX_CONTACTS_PER_USER} contacts."
+        )
     return await contact_repo.create_contact(contact)
 
 

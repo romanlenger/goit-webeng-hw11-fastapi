@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Form
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Form, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from jinja2 import Environment, FileSystemLoader
+from cloudinary.uploader import upload
 
 from config.db import get_db
 from src.auth.schema import UserResponse, UserCreate, Token
 from src.auth.repos import UserRepository
 from src.auth.pass_utils import verify_password
 from src.auth.mail_utils import send_verification_email, send_reset_password_email
-from src.auth.utils import create_acces_token, create_refresh_token, create_verification_token, decode_verification_token
+from src.auth.utils import get_current_user, create_acces_token, create_refresh_token, create_verification_token, decode_verification_token
 
 
 router = APIRouter()
@@ -128,4 +129,47 @@ async def login_for_access_token(
     access_token = create_acces_token(data={"sub" : user.username})
     refresh_token = create_refresh_token(data={"sub" : user.username})
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+
+
+@router.post("/update-avatar", response_model=UserResponse)
+async def update_avatar(
+    file: UploadFile = File(...),
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Оновлення аватара користувача
+    """
+    if file.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Only JPEG and PNG are allowed."
+        )
+
+    try:
+        upload_result = upload(
+            file.file,
+            folder="avatars",
+            public_id=current_user.email.split("@")[0],
+            overwrite=True,
+            resource_type="image"
+        )
+
+        avatar_url = upload_result.get("secure_url")
+        if not avatar_url:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to upload image"
+            )
+
+        user_repo = UserRepository(db)
+        updated_user = await user_repo.update_avatar(current_user.id, avatar_url)
+
+        return updated_user
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Avatar update failed: {str(e)}"
+        )
     
