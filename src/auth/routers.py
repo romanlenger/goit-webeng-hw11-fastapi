@@ -65,7 +65,7 @@ async def forgot_password(email: str, background_tasks: BackgroundTasks, db: Asy
         )
     reset_token = create_verification_token(email)
     reset_link = f"http://localhost:8000/auth/reset-password-form?token={reset_token}"
-    template = env.get_template("reset_password.html")
+    template = env.get_template("reset_password_email.html")
     email_body = template.render(reset_link=reset_link)
     background_tasks.add_task(send_reset_password_email, user.email, email_body)
 
