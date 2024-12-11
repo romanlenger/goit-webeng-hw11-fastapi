@@ -5,7 +5,9 @@ LABEL authors="author"
 RUN pip install --upgrade pip && pip install poetry
 WORKDIR /app
 COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-dev --no-root
+RUN poetry install 
+RUN poetry add alembic
+
 COPY . .
 
 EXPOSE 8000
