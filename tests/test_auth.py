@@ -25,5 +25,5 @@ async def test_register_user(user_role: Role, override_get_db, faker, monkeypatc
 
                 assert response.status_code == 201
                 data = response.json()
-                
+
                 assert data["email"] == payload["email"]
