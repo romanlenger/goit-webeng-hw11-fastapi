@@ -1,0 +1,49 @@
+This project addresses the problem of user and contact management for an application that allows users to register, authenticate, update passwords, upload avatars, and manage contacts, with features for searching, viewing, and editing contact information.
+Problems Addressed by the Project
+
+    User Management and Authentication:
+        User registration with email verification to confirm their account.
+        Login using access tokens and password recovery through email links to regain access.
+        User avatar updates using an image storage service.
+
+    Contact Management:
+        Create, update, search, and delete contacts with a limit of 100 contacts per user.
+        View detailed information about a specific contact, and filter contacts by query for convenient searching.
+        Feature to retrieve upcoming birthdays from the contact database, allowing users to track important events.
+
+    Security:
+        All sensitive data (e.g., passwords) is stored in an encrypted format.
+        JWT tokens are used for secure access to the API.
+        Token verification is required before performing sensitive actions, such as changing passwords or uploading avatars.
+
+How the Project Works
+
+    User Registration:
+        The user provides their email, password, and other details for registration.
+        The system checks if the user with that email already exists. If so, an error is returned.
+        If the user does not exist, a new record is created, and the user receives an email with a link to activate their account.
+
+    User Login:
+        The user enters their login credentials (email and password).
+        If the credentials are correct, a JWT token is generated, allowing the user to perform actions without needing to re-enter their password.
+
+    Profile Update:
+        Users can update their avatar by uploading an image (JPEG or PNG formats).
+        If the upload is successful, the image is stored in the cloud, and the user receives a link to their new avatar.
+
+    Contact Management:
+        Users can create new contacts with details like name, phone number, birthday, and more.
+        The number of contacts is limited to 100 for each user.
+        Contacts can be updated, deleted, or searched using various parameters.
+
+    Email Confirmation and Password Recovery:
+        The user receives an email confirmation after registration and password recovery.
+        Password recovery tokens have an expiration date and allow the user to change their password after validation.
+
+Technologies Used
+
+    FastAPI — for building high-performance APIs.
+    SQLAlchemy and AsyncSession — for asynchronous database interaction.
+    JWT (JSON Web Tokens) — for authentication and authorization of users.
+    Cloudinary — for uploading and storing user avatars.
+    Jinja2 — for rendering HTML templates for email notifications.
