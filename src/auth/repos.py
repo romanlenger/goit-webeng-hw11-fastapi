@@ -6,6 +6,13 @@ from sqlalchemy import select
 
 
 class UserRepository:
+    """Репозиторій для взаємодії з моделями користувачів у базі даних.
+
+    Використовується для створення, отримання, активації та оновлення користувачів.
+
+    Attributes:
+        session (AsyncSession): Сесія для роботи з базою даних.
+    """
     def __init__(self, session):
         self.session = session
 
@@ -39,6 +46,14 @@ class UserRepository:
         await self.session.refresh(user)
 
     async def update_password(self, user: User, new_password: str):
+        """Оновлює пароль користувача.
+
+        Хешує новий пароль перед збереженням у базі даних.
+
+        Args:
+            user (User): Користувач, для якого потрібно оновити пароль.
+            new_password (str): Новий пароль користувача.
+        """
         new_hashed_password = get_password_hash(new_password)
         user.hashed_password = new_hashed_password
         self.session.add(user)

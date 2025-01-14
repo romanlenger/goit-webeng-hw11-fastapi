@@ -23,6 +23,19 @@ async def register(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
+    """Реєстрація нового користувача.
+
+    Цей маршрут створює нового користувача, перевіряючи, чи не існує вже користувач з таким email.
+    Після успішної реєстрації відправляється лист для підтвердження email.
+
+    Параметри:
+        user_create (UserCreate): Дані для створення нового користувача.
+        background_tasks (BackgroundTasks): Фонова задача для відправки email.
+        db (AsyncSession): Сесія для роботи з базою даних.
+
+    Повертає:
+        UserResponse: Дані про зареєстрованого користувача.
+    """
     user_repo = UserRepository(db)
     user = await user_repo.get_user_by_email(user_create.email)
     if user:
@@ -43,6 +56,17 @@ async def register(
 
 @router.get("/verify-email")
 async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
+    """Підтвердження email користувача за допомогою токена.
+
+    Цей маршрут перевіряє токен підтвердження email, активує користувача після успішної перевірки.
+
+    Параметри:
+        token (str): Токен підтвердження email.
+        db (AsyncSession): Сесія для роботи з базою даних.
+
+    Повертає:
+        dict: Повідомлення про успішне підтвердження email.
+    """
     email: str = decode_verification_token(token=token)
     user_repo = UserRepository(db)
     user = await user_repo.get_user_by_email(email=email)
@@ -57,6 +81,18 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
 
 @router.post("/forgot-password")
 async def forgot_password(email: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    """Запит на відновлення паролю через email.
+
+    Цей маршрут генерує токен для відновлення паролю та відправляє email з посиланням для зміни паролю.
+
+    Параметри:
+        email (str): Email користувача для відновлення паролю.
+        background_tasks (BackgroundTasks): Фонова задача для відправки email.
+        db (AsyncSession): Сесія для роботи з базою даних.
+
+    Повертає:
+        dict: Повідомлення про успішну відправку email.
+    """
     user_repo = UserRepository(db)
     user = await user_repo.get_user_by_email(email=email)
     if user is None:
@@ -75,8 +111,14 @@ async def forgot_password(email: str, background_tasks: BackgroundTasks, db: Asy
 
 @router.get("/reset-password-form", response_class=HTMLResponse)
 async def get_reset_password_form(token: str, db: AsyncSession = Depends(get_db)):
-    """
-    Відкриває форму введення нового паролю після перевірки токена.
+    """Відкриває форму для введення нового паролю після перевірки токена.
+
+    Параметри:
+        token (str): Токен для відновлення паролю.
+        db (AsyncSession): Сесія для роботи з базою даних.
+
+    Повертає:
+        HTMLResponse: HTML форма для введення нового паролю.
     """
     try:
         email = decode_verification_token(token)
@@ -100,6 +142,16 @@ async def get_reset_password_form(token: str, db: AsyncSession = Depends(get_db)
 
 @router.post("/reset-password")
 async def reset_password(token: str = Form(...), new_password: str = Form(...), db: AsyncSession = Depends(get_db)):
+    """Зміна паролю користувача після перевірки токена.
+
+    Параметри:
+        token (str): Токен для зміни паролю.
+        new_password (str): Новий пароль для користувача.
+        db (AsyncSession): Сесія для роботи з базою даних.
+
+    Повертає:
+        dict: Повідомлення про успішне оновлення паролю.
+    """
     email = decode_verification_token(token)
     if not email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
@@ -118,6 +170,17 @@ async def reset_password(token: str = Form(...), new_password: str = Form(...), 
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
 ):
+    """Отримання токена для автентифікації.
+
+    Цей маршрут дозволяє користувачеві увійти за допомогою логіну та паролю і отримати токен доступу.
+
+    Параметри:
+        form_data (OAuth2PasswordRequestForm): Дані для входу (логін та пароль).
+        db (AsyncSession): Сесія для роботи з базою даних.
+
+    Повертає:
+        Token: Токен доступу та токен оновлення для користувача.
+    """
     user_repo = UserRepository(db)
     user = await user_repo.get_user_by_username(form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -137,8 +200,17 @@ async def update_avatar(
     current_user: UserResponse = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Оновлення аватара користувача
+    """Оновлення аватара користувача.
+
+    Цей маршрут дозволяє користувачеві завантажити новий аватар.
+
+    Параметри:
+        file (UploadFile): Файл аватара для завантаження.
+        current_user (UserResponse): Текущий користувач.
+        db (AsyncSession): Сесія для роботи з базою даних.
+
+    Повертає:
+        UserResponse: Дані користувача з оновленим аватаром.
     """
     if file.content_type not in ["image/jpeg", "image/png"]:
         raise HTTPException(
@@ -172,4 +244,3 @@ async def update_avatar(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Avatar update failed: {str(e)}"
         )
-    

@@ -5,6 +5,20 @@ from config.db import Base
 
 
 class Contact(Base):
+    """Модель контактів для зберігання інформації про користувачів.
+
+    Attributes:
+        id (int): Унікальний ідентифікатор контакту.
+        first_name (str): Ім'я контакту.
+        last_name (str): Прізвище контакту.
+        phone_number (str): Номер телефону контакту.
+        email (str): Електронна адреса контакту.
+        birthday (Date): Дата народження контакту.
+        age (int): Вік контакту.
+        additional_info (str, optional): Додаткова інформація про контакт.
+        owner_id (int): Ідентифікатор власника контакту (користувача).
+        owner (User): Об'єкт власника контакту (відношення до таблиці користувачів).
+    """
     __tablename__ = 'contact'
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True)

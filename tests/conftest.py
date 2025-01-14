@@ -2,19 +2,21 @@ import asyncio
 import pytest
 import pytest_asyncio
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncSessionLocal
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from main import app, get_db 
-from src.auth.models import Role, RoleEnum, User
+from main import app
+from src.auth.models import Role, User
+from src.auth.schema import RoleEnum
 from config.general import settings
-from config.db import Base
+from config.db import Base, get_db
 from src.auth.pass_utils import get_password_hash
 from src.auth.utils import create_acces_token, create_refresh_token
 from src.contacts.models import Contact
+ 
+DATABASE_URL = settings.database_test_url
 
-
-engine = create_async_engine(settings.database_test_url, echo=True)
-SessionLocal = sessionmaker(
+engine = create_async_engine(DATABASE_URL, echo=True)
+AsyncSessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine, class_=AsyncSession
 )
 
@@ -37,7 +39,7 @@ async def setup_database():
 
 
 @pytest_asyncio.fixture(scope="function")
-async def db_session(setup_database):
+async def db_session(setup_database=setup_database):
     async with AsyncSessionLocal() as session:
         yield session
 

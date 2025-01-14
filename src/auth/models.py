@@ -1,4 +1,4 @@
-from enum import Enum
+
 
 from sqlalchemy import String, Integer, ForeignKey, Date, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -7,10 +7,7 @@ from config.db import Base
 from src.contacts.models import Contact
 
 
-class RoleEnum(str, Enum):
-    USER = "user"
-    ADMIN = "admin"
-    SUPER = "super"
+
 
 
 class Role(Base):
@@ -21,6 +18,15 @@ class Role(Base):
 
 
 class User(Base):
+    """Модель користувача для зберігання інформації про користувачів.
+
+    Attributes:
+        email (str): Електронна адреса користувача.
+        username (str): Ім'я користувача.
+        hashed_password (str): Хешований пароль.
+        role_id (int): Ідентифікатор ролі користувача.
+        is_active (bool): Стан активності користувача.
+    """
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True)
